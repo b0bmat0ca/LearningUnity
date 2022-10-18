@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraMove : MonoBehaviour
 {
-    [SerializeField] Vector3 offset = new Vector3(0f, 1.5f, -6f);
+    [SerializeField] Vector3 offset = new Vector3(0f, 4f, -6f);
 
     private Transform player;
 
@@ -16,6 +16,11 @@ public class CameraMove : MonoBehaviour
 
     // Update is called once per frame
     void Update()
+    {
+        
+    }
+
+    private void LateUpdate()
     {
         // プレイヤーの位置からoffset分ズレた位置のワールド座標を算出して、カメラの位置に設定する
         transform.position = player.TransformPoint(offset);
