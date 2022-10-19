@@ -1,6 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,6 +12,7 @@ public class GameController : MonoBehaviour
     private readonly List<Transform> destinations = new();   // 巡回地点のリスト
 
     private string uiMessage;
+    private CancellationTokenSource tokenSource;
 
     private bool enemyHit = false;
     public bool EnemyHit
@@ -32,21 +34,34 @@ public class GameController : MonoBehaviour
     {
         InitPatrolRoute();
 
+        tokenSource = new CancellationTokenSource();
         try 
         {
-            _ = SpawnEnemy();
+            // こちらを利用すると、終了時に自動的にキャンセルされる
+            // SpawnEnemyAsync(this.GetCancellationTokenOnDestroy()).Forget();
+
+            SpawnEnemyAsync(tokenSource.Token).Forget();
         }
         catch (System.NullReferenceException ex)
         {
             Debug.Log(ex.ToString());
         }
-        
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        // 敵の増殖を止める
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            tokenSource.Cancel();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // 終了時にUniiTaskをキャンセルする
+        tokenSource.Cancel();
     }
 
     private void OnGUI()
@@ -77,17 +92,18 @@ public class GameController : MonoBehaviour
     /// <summary>
     /// 10秒毎に敵を出現させる
     /// </summary>
+    /// <param name="token"></param>
     /// <returns></returns>
-    async UniTask SpawnEnemy()
+    private async UniTaskVoid SpawnEnemyAsync(CancellationToken token)
     {
         int spawnIndex = Random.Range(0, destinations.Count);
         GameObject obj = Instantiate(enemy, destinations[spawnIndex].position, Quaternion.identity);
         EnemyController ectl = obj.GetComponent<EnemyController>();
         ectl.DestIndex = spawnIndex;
 
-        await UniTask.Delay(System.TimeSpan.FromSeconds(10));
+        await UniTask.Delay(System.TimeSpan.FromSeconds(10), cancellationToken: token);
 
-        _ = SpawnEnemy();
+        SpawnEnemyAsync(token).Forget();
     }
 
     /// <summary>
