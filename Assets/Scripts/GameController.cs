@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class GameController : MonoBehaviour
 {
@@ -17,10 +16,6 @@ public class GameController : MonoBehaviour
     private bool enemyHit = false;
     public bool EnemyHit
     {
-        get
-        {
-            return enemyHit;
-        }
         set
         {
             enemyHit = value;
@@ -35,17 +30,10 @@ public class GameController : MonoBehaviour
         InitPatrolRoute();
 
         tokenSource = new CancellationTokenSource();
-        try 
-        {
-            // こちらを利用すると、終了時に自動的にキャンセルされる
-            // SpawnEnemyAsync(this.GetCancellationTokenOnDestroy()).Forget();
 
-            SpawnEnemyAsync(tokenSource.Token).Forget();
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Debug.Log(ex.ToString());
-        }
+        // こちらを利用すると、終了時に自動的にキャンセルされる
+        // SpawnEnemyAsync(this.GetCancellationTokenOnDestroy()).Forget();
+        SpawnEnemyAsync(tokenSource.Token).Forget();
     }
 
     // Update is called once per frame
@@ -69,11 +57,9 @@ public class GameController : MonoBehaviour
         // 敵に捕まったら終了で、最初から始められるようにする
         if (enemyHit)
         {
-            
             if (GUI.Button(new Rect(Screen.width / 2 - 64f, Screen.height / 2 - 32f, 128f, 64f), uiMessage))
             {
-                SceneManager.LoadScene(0);
-                Time.timeScale = 1.0f;
+                Utilities.RestartGame(0);
             }
         }
     }
