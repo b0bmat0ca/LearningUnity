@@ -18,6 +18,8 @@ namespace TransformPlayer
 
         private BoxCollider boxColider;
 
+        private Vector3 normalVector;
+
         // Start is called before the first frame update
         void Start()
         {
@@ -31,7 +33,7 @@ namespace TransformPlayer
             axisH = Input.GetAxis("Horizontal");    // 矢印キーの左右入力を取得(-1 ～1)
             axisV = Input.GetAxis("Vertical");  // 矢印キーの上下入力を取得(-1 ～ 1)
 
-            if (IsGrounded(out Vector3 normalVector))
+            if (IsGrounded())
             {
                 velocity = Vector3.ProjectOnPlane(Vector3.forward, normalVector) * axisV * moveSpeed;
                 if (Input.GetKeyDown(KeyCode.Space))
@@ -39,20 +41,53 @@ namespace TransformPlayer
                     velocity.y += jumpForce;
                 }
             }
-
-            // 地面に接地していない場合は、重力を考慮する
-            if (!IsGrounded(out _))
+            else
             {
                 velocity.y += Physics.gravity.y * Time.deltaTime;
             }
-            transform.Translate(velocity * Time.deltaTime);
 
             // プレイヤーの移動
-            transform.Translate(Vector3.forward * (axisV * moveSpeed * Time.deltaTime));
+            transform.Translate(velocity * Time.deltaTime);
 
             // プレイヤーの回転
             transform.Rotate(Vector3.up * (axisH * rotationSpeed * Time.deltaTime));
         }
+
+        private void FixedUpdate()
+        {
+           Debug.Log( IsGrounded());
+
+            //if (IsGrounded())
+            //{
+            //    if (Input.GetKeyDown(KeyCode.Space))
+            //    {
+            //        velocity = Vector3.ProjectOnPlane(Vector3.forward, normalVector) * axisV * moveSpeed;
+            //        velocity.y += jumpForce;
+            //    }
+            //}
+            //else
+            //{
+            //    velocity.y += Physics.gravity.y * Time.deltaTime;
+            //}
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (collision.gameObject.CompareTag("Ground"))
+            {
+                normalVector = collision.contacts[0].normal;
+            }
+        }
+
+        private bool IsGrounded()
+        {
+            Vector3 center = new(boxColider.bounds.center.x,
+                boxColider.bounds.center.y - boxColider.bounds.size.y * 0.5f, boxColider.bounds.center.z);
+
+            return Physics.CheckSphere(center, boxColider.bounds.size.x * 0.5f, groundLayer,
+                QueryTriggerInteraction.Ignore);
+        }
+
 
         /// <summary>
         /// GroundLayerのColiderとの接地判定
